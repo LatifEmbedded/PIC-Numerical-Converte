@@ -4,7 +4,7 @@
 #define rs		PORTCbits.RC0
 #define rw 		PORTCbits.RC1
 #define en		PORTCbits.RC2
-#define max		4
+#define max		3
 #define length  17
 
 
@@ -47,7 +47,7 @@ void creatNumber(void);
 void clearArray(void);
 void decToBin(void);
 void decToHex(void);
-void function(unsigned char string[length], unsigned char j);
+void function(unsigned char string[length], unsigned char k);
 
 #pragma interrupt myFunction
 void myFunction(void)
@@ -466,7 +466,7 @@ void creatNumber(void)
 	if(j == 3)
 	{
 		k = 100;
-		while(stringEn[i] != '\0')
+		while(i<max)
 		{
 			number += k * stringEn[i];
 			++i;
@@ -476,7 +476,7 @@ void creatNumber(void)
 	else if(j == 2)
 	{
 		k = 10;
-		while(stringEn[i] != '\0')
+		while(i<max)
 		{
 			number += k * stringEn[i];
 			++i;
@@ -493,7 +493,7 @@ void clearArray(void)
 	unsigned char i = 0;
 	while(i<max)
 	{
-		stringEn[i] = '\0';
+		stringEn[i] = 0;
 		++i;
 	}
 }
@@ -529,7 +529,7 @@ void decToHex(void)
 		--i;
 	}
 }
-void function(unsigned char string[length], unsigned char j)
+void function(unsigned char string[length], unsigned char k)
 {
 	unsigned char i = 0, r = 0;
 	while(i<(length-1))
@@ -541,7 +541,7 @@ void function(unsigned char string[length], unsigned char j)
  	i = 0;
 	while(number != 0)
 	{
-		r = number%j;
+		r = number%k;
 		if(r >= 10)
 		{
 			switch(r)		
@@ -568,7 +568,7 @@ void function(unsigned char string[length], unsigned char j)
 		}
 		else
 			string[i] = r + 0x30;
-		number /= j;
+		number /= k;
 		++i;
 	}
 }
