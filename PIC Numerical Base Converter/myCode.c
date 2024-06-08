@@ -5,14 +5,13 @@
 #define rw 		PORTCbits.RC1
 #define en		PORTCbits.RC2
 #define max		3
-#define length  17
 
 /* DEFINITION OF GLOBAL VARIABLES */
 unsigned char string_1[] = "    1.DEC TO HEX";
 unsigned char string_2[] = "    2.DEC TO BIN";
 unsigned char string_3[] = "    3.DEC TO OCT";
 unsigned char string_4[] = "ENTER NUMBER :";
-unsigned char resultDisplay[] = "RESULT :";
+unsigned char resultDisplay[] = "RESULT : ";
 unsigned char error[] = "  _____ERROR_____  ";
 
 /* DECLARATION OF GLOBAL VARIABLES STORED AT ACCESS RAM */
@@ -50,10 +49,10 @@ void creatNumber(void);						// CREAT NUMBER FROM THE STRING(stringEn)
 void clearArray(void);						// CLEAR THE ARRAY
 void decToBin(void);						// FUNCTION TO CONVERT DECIMAL TO BINARY
 void decToHex(void);						// FUNCTION TO CONVERT DECIMAL TO HEXADECIMAL
-void function(unsigned char string[length], unsigned char k);		// FUNCTION RESPONSIBLE FOR CONVERTING THE NUMBER BESIDES THE decToHex and decToBin
+void function(unsigned char size, unsigned char* string, unsigned char k);		// FUNCTION RESPONSIBLE FOR CONVERTING THE NUMBER BESIDES THE decToHex and decToBin
 void repeatGame(void);
 void decToOct(void);						// FUNCTION TO CONVERT DECIMAL TO OCTAL BASE
-void displayResult(const unsigned char* string);
+void displayResult(unsigned char size, const unsigned char* string);
 
 /* ISR FUNCTION */
 #pragma interrupt myFunction
@@ -506,15 +505,15 @@ void clearArray(void)
 		++i;
 	}
 }
-void function(unsigned char string[length], unsigned char k)
+void function(unsigned char size, unsigned char* string, unsigned char k)
 {
 	unsigned char i = 0, r = 0;
-	while(i<(length-1))
+	while(i<(size-1))
 	{
 		string[i] = 0x30;
 		++i;
 	}
-	string[i] = '\0';
+	string[i] = '\0';	
  	i = 0;
 	while(number != 0)
 	{
@@ -567,29 +566,28 @@ void repeatGame(void)
 }
 void decToOct(void)
 {
-	unsigned char result[length];
-	function(result, 8);
-	displayResult(result);	
+	unsigned char result[5];			// result coded in 4 bit
+	function(5, result, 8);				
+	displayResult(5, result);	
 }
 void decToBin(void)
 {
-	unsigned char result[length];
-	function(result, 2);
-	displayResult(result);	
+	unsigned char result[10];			// result coded in 9 bit
+	function(10, result, 2);
+	displayResult(10, result);	
 }
 void decToHex(void)
 {
-	unsigned char result[length];
-	function(result, 16);
-	displayResult(result);	
+	unsigned char result[5];			// result coded in 5 bit
+	function(5, result, 16);
+	displayResult(4, result);	
 }
-void displayResult(const unsigned char* string)
+void displayResult(unsigned char size, const unsigned char* string)
 {
 	unsigned char i = 0;
 	clearDisplay();
 	justDisplay(resultDisplay);
-	secondLine();
-	i = length-1;	
+	i = size-1;	
 	while(i > 0)
 	{
 		LATD = string[i-1];
