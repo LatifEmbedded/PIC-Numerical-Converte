@@ -1,13 +1,13 @@
 #include <p18f452.h>
 #pragma config WDT = OFF
-
+/* DEFINING PORTC PINS AS rs, rw, en */
 #define rs		PORTCbits.RC0
 #define rw 		PORTCbits.RC1
 #define en		PORTCbits.RC2
 #define max		3
 #define length  17
 
-
+/* DEFINITION OF GLOBAL VARIABLES */
 unsigned char string_1[] = "  1.DEC TO HEX";
 unsigned char string_2[] = "  2.DEC TO BIN";
 unsigned char string_3[] = "  3.DEC TO OCT";
@@ -15,49 +15,52 @@ unsigned char string_4[] = "ENTER NUMBER :";
 unsigned char resultDisplay[] = "RESULT :";
 unsigned char error[] = "  _____ERROR_____  ";
 
-
+/* DECLARATION OF GLOBAL VARIABLES STORED AT ACCESS RAM */
 #pragma idata access state = 0x000
 near unsigned char state = 0;
 near unsigned char position = 0;
 near unsigned char positionOld = 0;
 near unsigned char stateSecond = 0;
 near unsigned char choosenValue = 0;
-near unsigned char j = 0;
+volatile near unsigned char j = 0;
 near unsigned char etat = 0;
 near unsigned int number = 0;
 
+/* DECLARATION OF UNINITIALIZED VARIABLE (BANKED)*/
 #pragma udata stringEn
 unsigned int stringEn[max];
 
-
-void initiaLcd(void);
-void delay250ms(void);
-void delay3us(void);
-void commandInst(void);
-void busyFlag(void);
-void dataInst(void);
-void justDisplay(unsigned char *pointer);
-void secondLine(void);
-void thirdLine(void);
-void timeAcqui(void);
-void forthLine(void);
-void displayArrow(void);
-void clearDisplay(void);
-void clearLine(void);
-void checkNumber(void);
-void creatNumber(void);
-void clearArray(void);
-void decToBin(void);
-void decToHex(void);
-void function(unsigned char string[length], unsigned char k);
+/* FUNCTION PROTOTYPE*/
+void initiaLcd(void);				// INITIALIZATION OF LCD
+void delay250ms(void);				// DELAY OF 250 MS
+void delay3us(void);				// DELAY OF 3 US
+void commandInst(void);				// COMMAND FUNCTION
+void busyFlag(void);				// BUSY FLAG FOR LCD
+void dataInst(void);				// DATA FUNCTION
+void justDisplay(unsigned char *pointer);	// FUNCTION TO DISPLAY STRINGS
+void secondLine(void);						// FUNCTION TO JUMP TO SECOND LINE
+void thirdLine(void);						// FUNCTION TO JIMP TO THIRD LINE
+void timeAcqui(void);						// TIME ACQUISITION FOR THE CAPACITOR
+void forthLine(void);						// JUMP TO FORTH LINE
+void displayArrow(void);					// DISPLAYING ARROW AT THE BEGINING BEFORE THE STRINGS
+void clearDisplay(void);					// CLEAR ENTIRE DISPLAY
+void clearLine(void);						// CLEAR THE SECOND LINE
+void checkNumber(void);						// CHECK THE ENTERED NUMBER
+void creatNumber(void);						// CREAT NUMBER FROM THE STRING(stringEn)
+void clearArray(void);						// CLEAR THE ARRAY
+void decToBin(void);						// FUNCTION TO CONVERT DECIMAL TO BINARY
+void decToHex(void);						// FUNCTION TO CONVERT DECIMAL TO HEXADECIMAL
+void function(unsigned char string[length], unsigned char k);		// FUNCTION RESPONSIBLE FOR CONVERTING THE NUMBER BESIDES THE decToHex and decToBin
 void repeatGame(void);
 
+/* ISR FUNCTION */
 #pragma interrupt myFunction
 void myFunction(void)
 {
 	if(INTCONbits.RBIF == 1)
 	{
-		PORTB = PORTB;
+		/* THIS SECTION IS OF MATRIX SCANNING */
+		PORTB = PORTB;	
 		if(PORTAbits.RA1 == 0)
 		{
 			if(PORTBbits.RB4 == 0)
@@ -145,6 +148,7 @@ void myFunction(void)
 			else if(PORTBbits.RB7 == 0)
 				repeatGame();
 		}
+		/* DISPLAY ERROR IF LENGHT IS GREATER THEN 3 */
 		if(j >= 4)
 		{
 			clearLine();
@@ -160,28 +164,29 @@ void myFunction(void)
 	else if(INTCONbits.INT0IF == 1)
 	{
 		INTCONbits.INT0IF = 0;
-		if(etat == 0)
+		if(etat == 0)				// AFTER CHOOSING OPTION CLICK ONE TO ENTER NUMBER
 		{
 			etat = 1;
 			clearDisplay();
 			justDisplay(string_4);
 			secondLine();	
 		}
-		else if(etat == 1)
+		else if(etat == 1)			// AFTER ENTERING NUMBER CLICK SECOND TO CHECK NUMBER
 		{
 			etat = 2;
 			creatNumber();
 		}
-		else		
+		else						// AFTER CHECKING THE NUMBE ANOTHER CLICK GIVES RESULT
 		{
-			if(choosenValue == 1)		
+			if(choosenValue == 1)			
 				decToBin();
 			else if(choosenValue == 0)
 				decToHex();
 		}
 	}
-	else if(PIR1bits.TMR1IF == 1)
+	else if(PIR1bits.TMR1IF == 1)		
 	{
+		/* SECTION FOR ACTIVATING ONE COLUMN AT TIME(ACTIVE LOW) */
 		PIR1bits.TMR1IF = 0;
 		TMR1H = 0x3C;
 		TMR1L = 0xB0;
@@ -211,19 +216,19 @@ void myFunction(void)
 			value = ADRESH;
 			value <<= 8;
 			value += ADRESL;
-			positionOld = (value*2)/1023;
+			positionOld = (value*2)/1023;	// THE MAXIMUME OUTPUT OF THE ADC CORRESPONDS TO 2 (2 -> 1023) : (0 -> 0)
 			displayArrow();
 		}
 		else
 		{
-			value = ADRESH;
+			value = ADRESH;					//RIGHT JUSTIFIED MANIPULATING
 			value <<= 8;
 			value += ADRESL;
-			position = (value*2)/1023;	
-			if(position != positionOld)
+			position = (value*2)/1023;		
+			if(position != positionOld)		//DISPLAY ARROW ONLY WHEN THERE IS CHANGES IN THE VOLTAGE PRESENTS AT THE PIN RA0
 			{
 				displayArrow();
-				positionOld = position;
+				positionOld = position;		
 			}
 		}
 		timeAcqui();
@@ -231,6 +236,7 @@ void myFunction(void)
 	}
 }
 
+/* HIGH LEVEL INTERRUPT */
 #pragma code myInterruptVector = 0x00008
 void myInterruptVector(void)
 {
@@ -240,13 +246,15 @@ void myInterruptVector(void)
 }
 #pragma code
 
+
+/* MAIN FUNCTION */
 void main(void)
 {
-		TRISB = 0xF1;
-		TRISD = 0x00;
+		TRISB = 0xF1;			
+		TRISD = 0x00;		// PORTD TOTALY OUTPUT
 		TRISC = 0xF8;
 		TRISA = 0x71;
-		ADCON0 = 0x41;
+		ADCON0 = 0x41;		// REGISTERS FOR ADC
 		ADCON1 = 0x8E;	
 		initiaLcd();
 		justDisplay(string_1);
@@ -254,25 +262,25 @@ void main(void)
 		justDisplay(string_2);
 		thirdLine();
 		justDisplay(string_3);
-		INTCONbits.GIE = 1;
-		INTCONbits.PEIE = 1;
-		INTCONbits.INT0IE = 1;		
-		INTCONbits.RBIE = 1;	
-		PIE1bits.TMR1IE = 1;
-		INTCON2bits.INTEDG0 = 0;
-		PIE1bits.ADIE = 1;
-		PIR1bits.TMR1IF = 0;
+		INTCONbits.GIE = 1;				// GLOBAL INTERRUPT BIT IS ENABLED
+		INTCONbits.PEIE = 1;			// PERIPHERALS INTERRUPTS
+		INTCONbits.INT0IE = 1;			// EXTERNAL HARDWARE INTERRUPT
+		INTCONbits.RBIE = 1;			// PORTB CHANGE INTERRUPT
+		PIE1bits.TMR1IE = 1;			// TIMER1 INTERRUPT
+		INTCON2bits.INTEDG0 = 0;		// INTERRUPT ON FALLING EDGE
+		PIE1bits.ADIE = 1;				// ADC INTERRUPT
+		PIR1bits.TMR1IF = 0;	
 		PIR1bits.ADIF = 0;
 		INTCONbits.INT0IF = 0;
 		INTCONbits.RBIF = 0;
 		timeAcqui();
-		ADCON0bits.GO = 1;
+		ADCON0bits.GO = 1;				// START CONVERSION
 		T1CON = 0x14;
 		TMR1H = 0x3C;
 		TMR1L = 0xB0;
 		LATA = 0x3C;
-		T1CONbits.TMR1ON = 1;
-		while(1);
+		T1CONbits.TMR1ON = 1;			// START TIMER1
+		while(1);						// STAY HERE
 }
 void initiaLcd(void)
 {
@@ -340,7 +348,7 @@ void busyFlag(void)
 void justDisplay(unsigned char *pointer)
 {
 		unsigned char i = 0;
-		while(pointer[i] != '\0')
+		while(pointer[i] != '\0')			// DISPLAY CHARACTERS UNTIL NULL CHARACTER
 		{
 			LATD = pointer[i];
 			dataInst();
@@ -369,19 +377,19 @@ void displayArrow(void)
 	}
 	else
 	{
-		LATD = prevValue;
+		LATD = prevValue;			
 		commandInst();
 		busyFlag();
-		LATD = 0x20;	
-		dataInst();
+		LATD = 0x20;					// DELET THE ARROW FROM THE LAST POSITION
+		dataInst();				
 		busyFlag();	
 	}
 	switch(position)
 	{
 		case 0 :
 			LATD = 0x80;
-			choosenValue = 0;
-			prevValue = LATD;
+			choosenValue = 0;	
+			prevValue = LATD;			// STORE THE LAST POSITION OF THE CURSOR
 			commandInst();
 			busyFlag();
 			break;
@@ -400,7 +408,7 @@ void displayArrow(void)
 			busyFlag();	
 			break;
 	}
-	LATD = 0x7E;
+	LATD = 0x7E;					// PUT THE ARROW AT THE NEW POSITION
 	dataInst();
 	busyFlag();
 }
@@ -443,14 +451,14 @@ void clearLine(void)
 }
 void checkNumber(void)
 {
-	if (number > 513)
+	if (number > 513)			// CHECK IF THE ENTERED NUMBER EXCEEDS THE 513
 	{
-		j = 0;	
-		etat = j+1;
+		j = 0;			
+		etat = j+1;				// USED TO ALLOW CHECKING THE NEW NUMBER AFTER THIS ONE
 		clearArray();
 		number = 0;
 		clearLine();
-		justDisplay(error);	
+		justDisplay(error);		// DISPLAY ERROR	
 		delay250ms();
 		delay250ms();
 		clearLine();
@@ -458,6 +466,7 @@ void checkNumber(void)
 }
 void creatNumber(void)
 {
+	// BASED ON NUMBER OF DIGITS ENTERED BY USER WE CONSTRUCT THE NUMBER
 	unsigned char i = 0, k;
 	if(j == 3)
 	{
@@ -481,7 +490,7 @@ void creatNumber(void)
 	}
 	else
 		number = stringEn[i];
-	checkNumber();
+	checkNumber();		
 }
 
 void clearArray(void)
@@ -543,27 +552,27 @@ void function(unsigned char string[length], unsigned char k)
 			switch(r)		
 			{		
 				case 10 :
-					string[i] = r + 0x37;	
+					string[i] = r + 0x37;			// 'A'
 					break;
 				case 11 :
-					string[i] = r + 0x37;		
+					string[i] = r + 0x37;			// 'B'
 					break;
 				case 12 :
-					string[i] = r + 0x37;		
+					string[i] = r + 0x37;			// 'C'
 					break;
 				case 13 :
-					string[i] = r + 0x37;		
-					break;
-				case 14 :
-					string[i] = r + 0x37;		
+					string[i] = r + 0x37;			// 'D'
+					break;	
+				case 14 :		
+					string[i] = r + 0x37;			// 'E'
 					break;
 				case 15 :
-					string[i] = r + 0x37;		
+					string[i] = r + 0x37;			// 'F'	
 					break;
 			}
 		}
 		else
-			string[i] = r + 0x30;
+			string[i] = r + 0x30;				// CONVERT IT TO ASCII CODE (0x30 -> 0x39)
 		number /= k;
 		++i;
 	}
